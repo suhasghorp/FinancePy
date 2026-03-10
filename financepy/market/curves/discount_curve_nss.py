@@ -128,7 +128,7 @@ class DiscountCurveNSS(DiscountCurve):
         discount factor depends on the rate and this in turn depends on its
         compounding frequency and it defaults to continuous compounding. It
         also depends on the day count convention. This was set in the
-        construction of the curve to be ACT_ACT_ISDA."""
+        construction of the curve to be ACT_360."""
 
         # Get day count times to use with curve day count convention
         dc_times = times_from_dates(dates, self.value_dt, self.dc_type)
@@ -143,6 +143,21 @@ class DiscountCurveNSS(DiscountCurve):
             return df[0]
 
         return df
+
+    ####################################################################################
+
+    def bump(self, bump_size: float):
+        return DiscountCurveNSS(
+            self.value_dt,
+            self._beta_0 + bump_size,
+            self._beta_1,
+            self._beta_2,
+            self._beta_3,
+            self._tau_1,
+            self._tau_2,
+            freq_type=self.freq_type,
+            dc_type=self.dc_type,
+        )
 
     ####################################################################################
 

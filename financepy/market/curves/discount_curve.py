@@ -53,22 +53,23 @@ class DiscountCurve:
         # access is controlled using getters and setters
         self._times = [0.0]
         self._dfs = [1.0]
-        self._df_dates = df_dates
+        self._df_dates = [value_dt]
 
         num_points = len(df_dates)
-
         start_index = 0
-        if num_points > 0:
-            if df_dates[0] == value_dt:
-                self._dfs[0] = df_values[0]
-                start_index = 1
+
+        if num_points > 0 and df_dates[0] == value_dt:
+            self._dfs[0] = df_values[0]
+            start_index = 1
 
         for i in range(start_index, num_points):
             t = (df_dates[i] - value_dt) / G_DAYS_IN_YEAR
             self._times.append(t)
             self._dfs.append(df_values[i])
+            self._df_dates.append(df_dates[i])
 
         self._times = np.array(self._times)
+        self._dfs = np.array(self._dfs)
 
         if test_monotonicity(self._times) is False:
             print(self._times)
@@ -79,23 +80,18 @@ class DiscountCurve:
         # This needs to be thought about - I just assign an arbitrary value
         self.dc_type = DayCountTypes.ACT_ACT_ISDA
 
-        self._dfs = np.array(self.dfs)
         self._interp_type = interp_type
         self._interpolator = Interpolator(self._interp_type)
         self.fit(self._times, self._dfs)
 
     @property
-
     ####################################################################################
-
     def times(self) -> np.ndarray:
         """Return the internal array of times(in years) from the anchor date."""
         return self._times.copy()  # return a copy to prevent external modification
 
     @property
-
     ####################################################################################
-
     def dfs(self) -> np.ndarray:
         """Return the internal array of discount factors corresponding to times."""
         return self._dfs.copy()  # return a copy to prevent external modification
@@ -219,7 +215,7 @@ class DiscountCurve:
 
     def zero_rate(
         self,
-        dts: Union[list, Date],
+        maturity_dt: Union[list, Date],
         freq_type: FrequencyTypes = FrequencyTypes.CONTINUOUS,
         dc_type: DayCountTypes = DayCountTypes.ACT_360,
     ):
@@ -234,13 +230,21 @@ class DiscountCurve:
         if isinstance(dc_type, DayCountTypes) is False:
             raise FinError("Invalid Day Count type.")
 
-        dfs = self.df(dts)
-        zero_rates = self._df_to_zero(dfs, dts, freq_type, dc_type)
+        dfs = self.df(maturity_dt)
 
-        if isinstance(dts, Date):
+        scalar_input = isinstance(maturity_dt, Date)
+
+        if scalar_input:
+            maturity_dts = [maturity_dt]
+        else:
+            maturity_dts = maturity_dt
+
+        zero_rates = self._df_to_zero(dfs, maturity_dts, freq_type, dc_type)
+
+        if scalar_input:
             return zero_rates[0]
 
-        return np.array(zero_rates)
+        return zero_rates
 
     ####################################################################################
 
@@ -279,16 +283,15 @@ class DiscountCurve:
         if isinstance(freq_type, FrequencyTypes) is False:
             raise FinError("Invalid Frequency type.")
 
-        if isinstance(freq_type, FrequencyTypes) is False:
-            raise FinError("Invalid Frequency type.")
-
         if freq_type == FrequencyTypes.SIMPLE:
             raise FinError("Cannot calculate par rate with simple yield freq.")
 
         if freq_type == FrequencyTypes.CONTINUOUS:
             raise FinError("Cannot calculate par rate with continuous freq.")
 
-        if isinstance(maturity_dt, Date):
+        scalar_input = isinstance(maturity_dt, Date)
+
+        if scalar_input:
             maturity_dts = [maturity_dt]
         else:
             maturity_dts = maturity_dt
@@ -326,7 +329,7 @@ class DiscountCurve:
 
         par_rates = np.array(par_rates)
 
-        if isinstance(maturity_dts, Date):
+        if scalar_input:
             return par_rates[0]
 
         return par_rates
@@ -341,8 +344,11 @@ class DiscountCurve:
         times = times_from_dates(dt, self.value_dt, day_count)
         dfs = self.df_t(times)
 
-        if isinstance(dfs, float):
-            return dfs
+        if isinstance(dt, Date):
+            if isinstance(dfs, float):
+                return dfs
+            else:
+                return dfs[0]
 
         return np.array(dfs)
 
@@ -378,7 +384,7 @@ class DiscountCurve:
 
     ####################################################################################
 
-    def fwd(self, dts: Date):
+    def fwd(self, dts: Union[list, Date]):
         """Calculate the continuously compounded forward rate at the forward
         Date provided. This is done by perturbing the time by one day only
         and measuring the change in the log of the discount factor divided by
@@ -386,19 +392,20 @@ class DiscountCurve:
         one date."""
 
         if isinstance(dts, Date):
-            dts_plus_one_days = [dts.add_days(1)]
+            dts_list = [dts]
+            scalar_input = True
         else:
-            dts_plus_one_days = []
-            for dt in dts:
-                dts_plus_one_day = dt.add_days(1)
-                dts_plus_one_days.append(dts_plus_one_day)
+            dts_list = dts
+            scalar_input = False
 
-        df1 = self.df(dts)
+        dts_plus_one_days = [dt.add_days(1) for dt in dts_list]
+
+        df1 = self.df(dts_list)
         df2 = self.df(dts_plus_one_days)
         dt = 1.0 / G_DAYS_IN_YEAR
-        fwd = np.log(df1 / df2) / (1.0 * dt)
+        fwd = np.log(df1 / df2) / dt
 
-        if isinstance(dts, Date):
+        if scalar_input:
             return fwd[0]
 
         return np.array(fwd)
@@ -423,18 +430,22 @@ class DiscountCurve:
 
     def bump(self, bump_size: float):
         """Adjust the continuously compounded forward rates by a perturbation
-        upward equal to the bump size and return a curve objet with this bumped
+        upward equal to the bump size and return a curve object with this bumped
         curve. This is used for interest rate risk."""
 
         times = self._times.copy()
-        values = self._dfs.copy()
+        values = self._dfs.copy() * np.exp(-bump_size * times)
 
-        n = len(self._times)
-        for i in range(0, n):
-            t = times[i]
-            values[i] = values[i] * np.exp(-bump_size * t)
-
-        disc_curve = DiscountCurve(self.value_dt, times, values, self._interp_type)
+        disc_curve = DiscountCurve.__new__(DiscountCurve)
+        disc_curve.value_dt = self.value_dt
+        disc_curve.freq_type = self.freq_type
+        disc_curve.dc_type = self.dc_type
+        disc_curve._times = times
+        disc_curve._dfs = values
+        disc_curve._df_dates = self._df_dates.copy()
+        disc_curve._interp_type = self._interp_type
+        disc_curve._interpolator = Interpolator(self._interp_type)
+        disc_curve.fit(times, values)
 
         return disc_curve
 
@@ -486,7 +497,7 @@ class DiscountCurve:
 
         return np.array(fwd_rates)
 
-    ####################################################################################
+    ###########################################################################
 
     def __repr__(self):
 
@@ -494,7 +505,9 @@ class DiscountCurve:
         num_points = len(self._df_dates)
         s += label_to_string("DATES", "DISCOUNT FACTORS")
         for i in range(0, num_points):
-            s += label_to_string(f"{self._df_dates[i]:>12}", f"{self._dfs[i]:12.8f}")
+            dt_str = str(self._df_dates[i])
+            s += label_to_string(f"{dt_str:>12}",
+                                 f"{self._dfs[i]:12.8f}")
 
         return s
 

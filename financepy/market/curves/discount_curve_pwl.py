@@ -42,8 +42,8 @@ class DiscountCurvePWL(DiscountCurve):
         if len(zero_dts) != len(zero_rates):
             raise FinError("Dates and rates vectors must have same length")
 
-        if len(zero_dts) == 0:
-            raise FinError("Dates vector must have length > 0")
+        if len(zero_dts) < 2:
+            raise FinError("Dates vector must have length at least 2")
 
         self._zero_rates = np.array(zero_rates)
         self._zero_dts = zero_dts
@@ -54,7 +54,7 @@ class DiscountCurvePWL(DiscountCurve):
 
         self._times = np.array(dc_times)
 
-        if test_monotonicity(self.times) is False:
+        if test_monotonicity(self._times) is False:
             raise FinError("Times are not sorted in increasing order")
 
     ####################################################################################
@@ -64,8 +64,10 @@ class DiscountCurvePWL(DiscountCurve):
         initial inputs. A simple linear interpolation scheme is used. If the
         user supplies a frequency type then a conversion is done."""
 
-        if isinstance(times, float):
+        if np.isscalar(times):
             times = np.array([times])
+        else:
+            times = np.array(times)
 
         if np.any(times < 0.0):
             raise FinError("All times must be positive")
@@ -85,9 +87,9 @@ class DiscountCurvePWL(DiscountCurve):
                     found = 1
                     break
 
-            t0 = self.times[l_index]
+            t0 = self._times[l_index]
             r0 = self._zero_rates[l_index]
-            t1 = self.times[l_index + 1]
+            t1 = self._times[l_index + 1]
             r1 = self._zero_rates[l_index + 1]
 
             if found == 1:
@@ -113,20 +115,27 @@ class DiscountCurvePWL(DiscountCurve):
 
         zero_rates = self._zero_rate(dc_times)
 
-        df = self._zero_to_df(
+        dfs = self._zero_to_df(
             self.value_dt, zero_rates, dc_times, self.freq_type, self.dc_type
         )
 
-        return df
+        scalar_input = isinstance(dates, Date)
 
-    # def _df(self,
-    #         t: Union[float, np.ndarray]):
-    #     """ Returns the discount factor at time t taking into account the
-    #     piecewise flat zero rate curve and the compunding frequency. """
+        if scalar_input:
+            return dfs[0]
 
-    #     r = self._zero_rate(t, self.freq_type)
-    #     df = zero_to_df(r, t, self.freq_type)
-    #     return df
+        return dfs
+
+    ####################################################################################
+
+    def bump(self, bump_size: float):
+        return DiscountCurvePWL(
+            self.value_dt,
+            self._zero_dts.copy(),
+            self._zero_rates + bump_size,
+            freq_type=self.freq_type,
+            dc_type=self.dc_type,
+        )
 
     ####################################################################################
 

@@ -56,7 +56,8 @@ def test_fin_discount_curves():
     fin_discount_curve_flat = DiscountCurveFlat(value_dt, 0.05)
     curves_list.append(fin_discount_curve_flat)
 
-    fin_discount_curve_ns = DiscountCurveNS(value_dt, 0.0305, -0.01, 0.08, 10.0)
+    fin_discount_curve_ns = DiscountCurveNS(
+        value_dt, 0.0305, -0.01, 0.08, 10.0)
     curves_list.append(fin_discount_curve_ns)
 
     fin_discount_curve_nss = DiscountCurveNSS(
@@ -64,7 +65,8 @@ def test_fin_discount_curves():
     )
     curves_list.append(fin_discount_curve_nss)
 
-    fin_discount_curve_poly = DiscountCurvePoly(value_dt, [0.05, 0.002, -0.00005])
+    fin_discount_curve_poly = DiscountCurvePoly(
+        value_dt, [0.05, 0.002, -0.00005])
     curves_list.append(fin_discount_curve_poly)
 
     fin_discount_curve_pwf = DiscountCurvePWF(value_dt, dates, rates)
@@ -94,7 +96,9 @@ def test_fin_discount_curves():
     test_cases.banner("######################################################")
 
     for name, curve in zip(curve_names, curves_list):
+
         for fwd_maturity_dt in fwd_maturity_dts:
+
             tenor = "3M"
             zero_rate = curve.zero_rate(fwd_maturity_dt)
             fwd = curve.fwd(fwd_maturity_dt)
@@ -172,7 +176,39 @@ def test_fin_discount_curves():
         plt.title("Discount Factors")
 
 
+def test_bump():
+
+    # Create a curve from times and discount factors
+    value_dt = Date(1, 1, 2018)
+    years = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    dates = value_dt.add_years(years)
+    years2 = []
+
+    for dt in dates:
+        y = (dt - value_dt) / G_DAYS_IN_YEAR
+        years2.append(y)
+
+    zeros = np.array([0.05, 0.06, 0.065, 0.07, 0.075,
+                     0.08, 0.081, 0.082, 0.083, 0.084])
+    dfs = np.exp(-np.array(zeros) * np.array(years2))
+
+    curve = DiscountCurve(
+        value_dt, dates, dfs, InterpTypes.FLAT_FWD_RATES
+    )
+
+#    print(curve)
+#    print(zeros)
+
+    bp = 0.0001
+    bumped_curve = curve.bump(bp)
+    bumped_zeros = bumped_curve.zero_rate(dates)
+
+#    print(bumped_curve)
+#    print(bumped_zeros)
+
 ########################################################################################
 
+
 test_fin_discount_curves()
+test_bump()
 test_cases.compare_test_cases()

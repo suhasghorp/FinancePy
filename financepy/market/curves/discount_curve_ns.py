@@ -68,7 +68,7 @@ class DiscountCurveNS(DiscountCurve):
         zero rates, this function allows other compounding and day counts.
         This function returns a single or vector of zero rates given a vector
         of dates so must use Numpy functions. The default frequency is a
-        continuously compounded rate and ACT ACT day counting."""
+        continuously compounded rate and ACT360 day counting."""
 
         if isinstance(freq_type, FrequencyTypes) is False:
             raise FinError("Invalid Frequency type.")
@@ -89,6 +89,11 @@ class DiscountCurveNS(DiscountCurve):
 
         # Convert these to zero rates in the required frequency and day count
         zero_rates = self._df_to_zero(dfs, dts, freq_type, dc_type)
+
+        scalar_input = isinstance(dts, Date)
+
+        if scalar_input:
+            return zero_rates[0]
 
         return zero_rates
 
@@ -129,6 +134,19 @@ class DiscountCurveNS(DiscountCurve):
             return df[0]
 
         return df
+
+    ####################################################################################
+
+    def bump(self, bump_size: float):
+        return DiscountCurveNS(
+            self.value_dt,
+            self._beta_0 + bump_size,
+            self._beta_1,
+            self._beta_2,
+            self._tau,
+            freq_type=self.freq_type,
+            dc_type=self.dc_type,
+        )
 
     ####################################################################################
 

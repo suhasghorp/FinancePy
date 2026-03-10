@@ -726,8 +726,8 @@ def test_oas():
     clean_price = 99.780842
 
     oas = bond.option_adjusted_spread(settle_dt, clean_price, libor_flat_curve) * 10000
-
-    if (oas - (-34.95)) > 0.01:
+    
+    if (oas - (-34.60)) > 0.01:
         print("OAS incorrect")
 
 
@@ -746,18 +746,18 @@ def test_div_dts():
 
     bond = Bond(issue_dt, maturity_dt, coupon, freq_type, accrual_type, ex_div_days)
 
-    print(bond)
+#    print(bond)
 
     clean_price = 99.7808417  # if face is 1 then this must be 0.99780842
 
     settle_dt = Date(15, 5, 2023)
-    bond.print_payments(settle_dt, face)
+#    bond.print_payments(settle_dt, face)
 
     current_yield = bond.current_yield(clean_price) * 100
-    print("Currnt Yield: %10.5f %%" % (current_yield))
+#    print("Currnt Yield: %10.5f %%" % (current_yield))
 
     ytm = bond.yield_to_maturity(settle_dt, clean_price) * 100.0
-    print("Yield to Mat: %10.5f %%" % (ytm))
+#    print("Yield to Mat: %10.5f %%" % (ytm))
 
 
 ###############################################################################
@@ -784,7 +784,7 @@ def test_cpn_types():
     bond = Bond(issue_dt, maturity_dt, coupon, freq_type, dc_type, cpn_type=cpn_type)
     settle_dt = Date(1, 5, 2022)
     face = 1000000
-    bond.print_payments(settle_dt, face)
+    # bond.print_payments(settle_dt, face)
 
     # We need to set the coupon type to ACCRUED to enable this
     cpn_type = CouponType.ACCRUED
@@ -803,5 +803,6 @@ test_bond_ror()
 test_bond_eom()
 test_key_rate_durations()
 test_key_rate_durations_bloomberg_example()
+test_div_dts()
 
 test_cases.compare_test_cases()

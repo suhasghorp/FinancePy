@@ -41,7 +41,6 @@ class DiscountCurvePoly(DiscountCurve):
 
         self.value_dt = value_dt
         self._coefficients = coefficients
-        self._power = len(coefficients) - 1
         self.freq_type = freq_type
         self.dc_type = dc_type
 
@@ -59,7 +58,7 @@ class DiscountCurvePoly(DiscountCurve):
         zero rates, this function allows other compounding and day counts.
         This function returns a single or vector of zero rates given a vector
         of dates so must use Numpy functions. The default frequency is a
-        continuously compounded rate and ACT ACT day counting."""
+        continuously compounded rate and ACT360 day counting."""
 
         if isinstance(freq_type, FrequencyTypes) is False:
             raise FinError("Invalid Frequency type.")
@@ -80,6 +79,12 @@ class DiscountCurvePoly(DiscountCurve):
 
         # Convert these to zero rates in the required frequency and day count
         zero_rates = self._df_to_zero(dfs, dts, freq_type, dc_type)
+
+        scalar_input = isinstance(dts, Date)
+
+        if scalar_input:
+            return zero_rates[0]
+
         return zero_rates
 
     ####################################################################################
@@ -117,7 +122,25 @@ class DiscountCurvePoly(DiscountCurve):
             self.value_dt, zero_rates, dc_times, self.freq_type, self.dc_type
         )
 
+        scalar_input = isinstance(dates, Date)
+
+        if scalar_input:
+            return dfs[0]
+
         return dfs
+
+    ####################################################################################
+
+    def bump(self, bump_size: float):
+        bumped_coefficients = np.array(self._coefficients, copy=True)
+        bumped_coefficients[0] += bump_size
+
+        return DiscountCurvePoly(
+            self.value_dt,
+            bumped_coefficients,
+            freq_type=self.freq_type,
+            dc_type=self.dc_type,
+        )
 
     ####################################################################################
 
@@ -129,6 +152,7 @@ class DiscountCurvePoly(DiscountCurve):
         for i in range(0, len(self._coefficients)):
             s += label_to_string(str(i), self._coefficients[i])
         s += label_to_string("FREQUENCY", self.freq_type)
+        s += label_to_string("DAY COUNT", self.dc_type)
 
         return s
 

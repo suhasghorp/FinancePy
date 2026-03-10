@@ -55,12 +55,14 @@ class DiscountCurvePWFONF(DiscountCurve):
         self.freq_type = FrequencyTypes.CONTINUOUS
         self.dc_type = DayCountTypes.SIMPLE
 
-        dc_times = times_from_dates(self._knot_dts, self.value_dt, self.dc_type)
+        dc_times = times_from_dates(
+            self._knot_dts, self.value_dt, self.dc_type)
 
         self._times = np.atleast_1d(dc_times)
 
         # it is easier to deal in log(dfs), log(df[Ti]) = -\int_0^T_i f(u) du
-        self._logdfs = -np.cumsum(np.diff(self._times, prepend=0.0) * self._onfwd_rates)
+        self._logdfs = - \
+            np.cumsum(np.diff(self._times, prepend=0.0) * self._onfwd_rates)
         self._logdfs_interp = interpolate.interp1d(
             np.concatenate(([0.0], self._times)),
             np.concatenate(([0.0], self._logdfs)),
@@ -73,9 +75,7 @@ class DiscountCurvePWFONF(DiscountCurve):
             raise FinError("Times are not sorted in increasing order")
 
     @classmethod
-
     ####################################################################################
-
     def brick_wall_curve(
         cls,
         valuation_date: Date,
@@ -103,9 +103,7 @@ class DiscountCurvePWFONF(DiscountCurve):
         return cls(valuation_date, knot_dts, onfwd_rates)
 
     @classmethod
-
     ####################################################################################
-
     def flat_curve(cls, valuation_date: Date, level: float = 1.0 * G_BASIS_POINT):
         knot_dts = [valuation_date.add_tenor("1Y")]
         onfwd_rates = [level]
@@ -137,20 +135,34 @@ class DiscountCurvePWFONF(DiscountCurve):
         also depends on the day count convention. This was set in the
         construction of the curve to be ACT_ACT_ISDA."""
 
+        scalar_input = np.isscalar(t)
+
         zero_rates = self._zero_rate(t)
 
         df = self._zero_to_df(
             self.value_dt, zero_rates, t, self.freq_type, self.dc_type
         )
 
+        if scalar_input:
+            return float(df[0])
+
         return df
+
+    ####################################################################################
+
+    def bump(self, bump_size: float):
+        return DiscountCurvePWFONF(
+            self.value_dt,
+            self._knot_dts.copy(),
+            self._onfwd_rates + bump_size,
+        )
 
     ####################################################################################
 
     def __repr__(self):
 
         s = label_to_string("OBJECT TYPE", type(self).__name__)
-        s += label_to_string("DATE", "ONWD RATE")
+        s += label_to_string("DATE", "ON_FWD RATE")
         for i in range(0, len(self._knot_dts)):
             s += label_to_string(self._knot_dts[i], self._onfwd_rates[i])
         s += label_to_string("FREQUENCY", (self.freq_type))

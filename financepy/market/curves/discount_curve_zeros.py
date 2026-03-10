@@ -4,6 +4,7 @@ from typing import Union
 
 import numpy as np
 
+
 from ...utils.frequency import FrequencyTypes
 from ...utils.error import FinError
 from ...utils.date import Date
@@ -62,7 +63,8 @@ class DiscountCurveZeros(DiscountCurve):
             raise FinError("Unknown Frequency type " + str(freq_type))
 
         if dc_type not in DayCountTypes:
-            raise FinError("Unknown Cap Floor DayCountRule type " + str(dc_type))
+            raise FinError(
+                "Unknown Cap Floor DayCountRule type " + str(dc_type))
 
         self.value_dt = value_dt
         self.freq_type = freq_type

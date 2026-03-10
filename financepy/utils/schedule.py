@@ -212,7 +212,8 @@ class Schedule:
         # We change it if the adjust_termination_dt flag is True.
         if self.adjust_termination_dt is True:
 
-            self.termination_dt = calendar.adjust(self.termination_dt, self.bd_type)
+            self.termination_dt = calendar.adjust(
+                self.termination_dt, self.bd_type)
 
             self.adjusted_dts[-1] = self.termination_dt
 
@@ -265,7 +266,8 @@ class Schedule:
 
             if len(self.adjusted_dts) > 1:
                 s += "\n"
-                s += label_to_string("FLW", self.adjusted_dts[1:], "", list_format=True)
+                s += label_to_string("FLW",
+                                     self.adjusted_dts[1:], "", list_format=True)
 
         return s
 

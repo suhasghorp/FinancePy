@@ -31,7 +31,7 @@ class DiscountCurvePWF(DiscountCurve):
         zero_dts: list[Date],
         zero_rates: Union[list, np.ndarray],
         freq_type: FrequencyTypes = FrequencyTypes.CONTINUOUS,
-        dc_type: DayCountTypes = DayCountTypes.ACT_ACT_ISDA,
+        dc_type: DayCountTypes = DayCountTypes.ACT_360,
     ):
         """Creates a discount curve using a vector of times and zero rates
         that assumes that the zero rates are piecewise flat."""
@@ -57,6 +57,34 @@ class DiscountCurvePWF(DiscountCurve):
 
         if test_monotonicity(self._times) is False:
             raise FinError("Times are not sorted in increasing order")
+
+    ####################################################################################
+
+    def zero_rate(
+        self,
+        dts: Union[list, Date],
+        freq_type: FrequencyTypes = FrequencyTypes.CONTINUOUS,
+        dc_type: DayCountTypes = DayCountTypes.ACT_360,
+    ):
+        if isinstance(freq_type, FrequencyTypes) is False:
+            raise FinError("Invalid Frequency type.")
+
+        if isinstance(dc_type, DayCountTypes) is False:
+            raise FinError("Invalid Day Count type.")
+
+        dc_times = times_from_dates(dts, self.value_dt, self.dc_type)
+        zero_rates = self._zero_rate(dc_times)
+
+        dfs = self._zero_to_df(
+            self.value_dt, zero_rates, dc_times, self.freq_type, self.dc_type
+        )
+
+        zero_rates = self._df_to_zero(dfs, dts, freq_type, dc_type)
+
+        if isinstance(dts, Date):
+            return zero_rates[0]
+
+        return zero_rates
 
     ####################################################################################
 
@@ -131,11 +159,16 @@ class DiscountCurvePWF(DiscountCurve):
 
         zero_rates = self._zero_rate(dc_times)
 
-        df = self._zero_to_df(
+        dfs = self._zero_to_df(
             self.value_dt, zero_rates, dc_times, self.freq_type, self.dc_type
         )
 
-        return df
+        scalar_input = isinstance(dates, Date)
+
+        if scalar_input:
+            return dfs[0]
+
+        return dfs
 
     ####################################################################################
 
@@ -146,6 +179,7 @@ class DiscountCurvePWF(DiscountCurve):
         for i in range(0, len(self._zero_dts)):
             s += label_to_string(self._zero_dts[i], self._zero_rates[i])
         s += label_to_string("FREQUENCY", (self.freq_type))
+        s += label_to_string("DAY COUNT", self.dc_type)
         return s
 
     ####################################################################################

@@ -13,9 +13,6 @@ from ...market.curves.discount_curve import DiscountCurve
 from ...utils.helpers import times_from_dates
 from ...market.curves.interpolator import InterpTypes
 
-# TODO: Do I need to add a day count to ensure rate and times are linked in
-#       the correct way URGENT
-
 ########################################################################################
 
 
@@ -41,8 +38,6 @@ class DiscountCurveFlat(DiscountCurve):
         As the curve is flat, no interpolation scheme is required.
         """
 
-        # super().__init__(value_dt)
-
         check_argument_types(self.__init__, locals())
 
         self.value_dt = value_dt
@@ -63,20 +58,16 @@ class DiscountCurveFlat(DiscountCurve):
         self._dfs = self.df(dts)
 
     @property
-
     ####################################################################################
-
     def times(self) -> np.ndarray:
         """Return the cached grid of times."""
-        return self._times
+        return self._times.copy()
 
     @property
-
     ####################################################################################
-
     def dfs(self) -> np.ndarray:
         """Return the cached grid of discount factors."""
-        return self._dfs
+        return self._dfs.copy()
 
     ####################################################################################
 

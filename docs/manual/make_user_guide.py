@@ -4,7 +4,6 @@
 
 
 import glob
-from math import e
 import os
 import sys
 import subprocess
@@ -12,12 +11,13 @@ import shutil
 import fileinput
 from re import sub
 
-with open("../version.py", "r") as fh:
-    version_number = fh.read()
-    start = version_number.find('"')
-    end = version_number[start + 1 :].find('"')
-    VERSION = str(version_number[start + 1 : start + end + 1])
-    VERSION = VERSION.replace("\n", "")
+# with open("../version.py", "r") as fh:
+#     version_number = fh.read()
+#     start = version_number.find('"')
+#     end = version_number[start + 1:].find('"')
+#     VERSION = str(version_number[start + 1: start + end + 1])
+#     VERSION = VERSION.replace("\n", "")
+VERSION = ""
 
 # file_name = "FinancePyManualV_" + str(VERSION)
 file_name = "FinancePyManual"
@@ -341,13 +341,15 @@ def parse_module(module_name):
     f = open(user_guide_file_name, "a", encoding="utf-8")
 
     for c in range(0, num_enums):
-        new_lines = parse_enum(lines, start_enum_lines[c], start_enum_lines[c + 1])
+        new_lines = parse_enum(
+            lines, start_enum_lines[c], start_enum_lines[c + 1])
 
         for new_line in new_lines:
             f.writelines(new_line)
 
     for c in range(0, num_classes):
-        new_lines = parse_class(lines, start_class_lines[c], start_class_lines[c + 1])
+        new_lines = parse_class(
+            lines, start_class_lines[c], start_class_lines[c + 1])
 
         for new_line in new_lines:
             f.writelines(new_line)
@@ -445,7 +447,7 @@ def parse_class(lines, start_line, end_line):
     ##################################################
     # Now get the data members
 
-    if parsedata_members:
+    if parse_data_members:
         new_lines.append("\\subsubsection*{Data Members}\n")
 
         data_members = []
@@ -534,7 +536,7 @@ def parse_function(lines, start_line, end_line, class_name=""):
         return ""
 
     n2 = function_line.find("(")
-    function_name = function_line[left_col + 4 : n2]
+    function_name = function_line[left_col + 4: n2]
 
     # If the function name starts with a _ and is not init then ignore it
     if function_name[0] == "_" and function_name != "__init__":
@@ -687,7 +689,7 @@ def parse_enum(lines, start_line, end_line):
     n1 = enum_line.find("class")
     n2 = enum_line.find("(")
     # len("class ") == 6
-    enum_name = enum_line[n1 + 6 : n2]
+    enum_name = enum_line[n1 + 6: n2]
     print("  Enumerated Type:", enum_name)
     print(start_line, end_line)
 
@@ -712,7 +714,8 @@ def parse_enum(lines, start_line, end_line):
     #        else:
     #            break
 
-    enum_description.append("\\subsubsection*{Enumerated Type: " + enum_name + "}")
+    enum_description.append(
+        "\\subsubsection*{Enumerated Type: " + enum_name + "}")
     enum_description.append("\n")
     enum_description.append("This enumerated type has the following values:\n")
     enum_description.append("\\begin{itemize}[nosep]")
@@ -738,7 +741,8 @@ def extract_params(function_signature):
     function_signature = function_signature.replace("%", "\%")
 
     # Remove information that isn't to do with the parameters
-    striped_signature = function_signature.split("(", 1)[1].replace("):", "").strip()
+    striped_signature = function_signature.split(
+        "(", 1)[1].replace("):", "").strip()
     if striped_signature == "":
         # The function has no parameters
         return ""
@@ -757,7 +761,7 @@ def extract_params(function_signature):
         comment_location = line.find("#")
         p_comment = "-"
         if comment_location != -1:
-            p_comment = line[comment_location + 1 :].strip()
+            p_comment = line[comment_location + 1:].strip()
             line = line[:comment_location]
 
         line = line.strip()
@@ -796,12 +800,12 @@ def extract_params(function_signature):
             p_default = "-"
             default_location = param.find("=")
             if default_location != -1:
-                p_default = param[default_location + 1 :].strip()
+                p_default = param[default_location + 1:].strip()
 
                 # Rip the type name out if it's an enumerated type
                 if p_default[0:3] == "Fin":
                     dotCol = p_default.find(".")
-                    p_default = p_default[dotCol + 1 :]
+                    p_default = p_default[dotCol + 1:]
 
                 param = param[:default_location]
 
@@ -809,7 +813,7 @@ def extract_params(function_signature):
             p_type = "-"
             type_location = param.find(":")
             if type_location != -1:
-                p_type = param[type_location + 1 :].strip()
+                p_type = param[type_location + 1:].strip()
                 p_type = parse_type(p_type)
                 param = param[:type_location].strip()
 
@@ -838,14 +842,14 @@ def parse_type(p_type):
         lb = p_type.find("[")
         rb = p_type.find("]")
         cm = p_type.find(",")
-        s = p_type[lb + 1 : cm] + " or " + p_type[cm + 1 : rb]
+        s = p_type[lb + 1: cm] + " or " + p_type[cm + 1: rb]
     elif u == -1 and b != -1:
         # Problem as list has a comma in it and this has already been used to
         # split the line of arguments above
         lb = p_type.find("(")
         rb = p_type.find(")")
         cm = p_type.find(",")
-        s = p_type[lb + 1 : cm] + " or " + p_type[cm + 1 : rb]
+        s = p_type[lb + 1: cm] + " or " + p_type[cm + 1: rb]
     else:
         s = p_type
 
@@ -856,18 +860,18 @@ def parse_type(p_type):
 
 
 build_head()
-build_intro("..//README.md")
+# build_intro("..//..//README.md")
 
 if 1 == 1:
-    build_chapter("..//financepy//utils")
-    build_chapter("..//financepy//market//curves")
-    build_chapter("..//financepy//market//volatility")
-    build_chapter("..//financepy//products//equity")
-    build_chapter("..//financepy//products//credit")
-    build_chapter("..//financepy//products//bonds")
-    build_chapter("..//financepy//products//rates")
-    build_chapter("..//financepy//products//fx")
-    build_chapter("..//financepy//models")
+    build_chapter("..//..//financepy//utils")
+    build_chapter("..//..//financepy//market//curves")
+    build_chapter("..//..//financepy//market//volatility")
+    build_chapter("..//..//financepy//products//equity")
+    build_chapter("..//..//financepy//products//credit")
+    build_chapter("..//..//financepy//products//bonds")
+    build_chapter("..//..//financepy//products//rates")
+    build_chapter("..//..//financepy//products//fx")
+    build_chapter("..//..//financepy//models")
 
     #    build_chapter("..//financepy//portfolio")
     #    build_chapter("..//financepy//risk")
