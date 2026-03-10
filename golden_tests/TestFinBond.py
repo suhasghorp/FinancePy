@@ -770,7 +770,7 @@ def test_cpn_types():
     
     issue_dt = Date(31, 3, 2022)
     maturity_dt = Date(31, 7, 2023)
-    freq_type = FrequencyTypes.ANNUAL
+    freq_type = FrequencyTypes.SEMI_ANNUAL
 
     # expect coupons on 
     # 31 July 2022
@@ -782,12 +782,14 @@ def test_cpn_types():
     # We do not see that here. All coupons are the same size
     cpn_type = CouponType.FIXED
     bond = Bond(issue_dt, maturity_dt, coupon, freq_type, dc_type, cpn_type=cpn_type)
-#    print(bond.flow_amounts)
+    settle_dt = Date(1, 5, 2022)
+    face = 1000000
+    bond.print_payments(settle_dt, face)
 
     # We need to set the coupon type to ACCRUED to enable this
     cpn_type = CouponType.ACCRUED
     bond = Bond(issue_dt, maturity_dt, coupon, freq_type, dc_type, cpn_type=cpn_type)
-#    print(bond.flow_amounts)
+    
 
 ###############################################################################
 

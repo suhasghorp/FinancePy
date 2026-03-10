@@ -12,6 +12,7 @@ build/
 *.png
 *.jpeg
 env/
+venv/
 .venv/
 develop-eggs/
 __pycache__/

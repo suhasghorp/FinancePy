@@ -1,19 +1,40 @@
+[build-system]
+requires = ["setuptools>=77.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "financepy"
 version = "1.0.2"
-description = "A Finance Securities Valuation Library"
 readme = "README.md"
 
-# Python compatibility must match NumPy / SciPy reality
-requires-python = ">=3.10,<3.13"
+authors = [
+    {name = "Dominic O'Kane"}
+]
 
+license = "GPL-3.0-or-later"
+
+# Move keywords here
+keywords = ["FINANCE", "OPTIONS", "BONDS", "VALUATION", "DERIVATIVES"]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+
+description = "A Finance Securities Valuation Library"
+
+# Python compatibility must match NumPy / SciPy reality
+requires-python = ">=3.10,<3.14"
+
+# 1. This is where your package list belongs
 dependencies = [
     "numpy>=2.3.5,<2.4",
     "scipy>=1.16.3,<1.17",
     "pandas>=2.3.3,<=2.4",
     "matplotlib>=3.10.6,<3.11",
     "numba>=0.62.1,<0.63",
-    "llvmlite>=0.45.0,<0.46",
+    "llvmlite>=0.45.0,<0.46"
 ]
 
 [project.optional-dependencies]
@@ -28,3 +49,13 @@ test = [
     "pytest-benchmark>=5.2",
     "more-itertools>=10,<11",
 ]
+
+[tool.setuptools]
+
+[tool.setuptools.packages.find]
+include = ["financepy*"]
+exclude = ["venv*", "notebooks*", "golden_tests*", "tests*"]
+
+[project.urls]
+Source = "https://github.com/domokane/FinancePy"
+Tracker = "https://github.com/domokane/FinancePy/issues"
